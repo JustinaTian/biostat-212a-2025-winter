@@ -1,0 +1,298 @@
+---
+title: "Biostat 212a Homework 2"
+subtitle: "Due Feb 8, 2025 @ 11:59PM"
+author: "Jiaye Tian and 306541095"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+format:
+  html:
+    theme: cosmo
+    embed-resources: true
+    number-sections: true
+    toc: true
+    toc-depth: 4
+    toc-location: left
+    code-fold: false
+engine: knitr
+knitr:
+  opts_chunk: 
+    fig.align: 'center'
+    # fig.width: 6
+    # fig.height: 4
+    message: FALSE
+    cache: false
+---
+
+## ISL Exercise 4.8.1 (10pts)
+```{r, echo=FALSE, results="asis"}
+library(knitr)
+cat(sprintf('![](%s)', image_uri("4.8.1.jpeg")))
+```
+## ISL Exercise 4.8.6 (10pts)
+```{r, echo=FALSE, results="asis"}
+cat(sprintf('![](%s)', image_uri("4.8.6.jpeg")))
+```
+## ISL Exercise 4.8.9 (10pts)
+```{r}
+library(dplyr)
+library(ggplot2)
+
+data.frame(prob = seq(0, 0.99, 0.01)) %>%
+  mutate(odds = prob / (1 - prob)) %>%
+  ggplot(aes(x = prob, y = odds)) + 
+  geom_point() + 
+  geom_line() + 
+  geom_vline(xintercept = 0.5, col = "red") +
+  geom_hline(yintercept = 1, col = "red") + 
+  coord_cartesian(ylim = c(0, 20)) + 
+  labs(x = "p", 
+       y = "Odds: p / (1 - p)", 
+       title = "Odds vs Probability Relationship")
+```
+```{r, echo=FALSE, results="asis"}
+cat(sprintf('![](%s)', image_uri("4.8.9.jpeg")))
+```
+
+## ISL Exercise 4.8.13 (a)-(i) (50pts)
+(a)
+```{r setup, include=FALSE}
+library(dplyr)
+library(readr)
+library(ISLR)
+library(caret)
+
+Weekly <- read.csv("/Users/justina/Desktop/212a/hw/Untitled/Weekly.csv")
+
+summary(Weekly)
+```
+
+```{r}
+pairs(Weekly[ ,-9])
+```
+```{r}
+cor(subset(Weekly, select = -Direction))
+```
+There is no apparent strong relationship between the lagged variables.
+
+```{r}
+Weekly$Week <- 1:nrow(Weekly)
+
+year_breaks <- Weekly %>%
+  group_by(Year) %>%
+  summarize(Week 
+            = min(Week))
+
+ggplot(Weekly, aes(x = Week, y = Volume)) + 
+  geom_line() + 
+  geom_smooth() + 
+  scale_x_continuous(breaks = year_breaks$Week, 
+                     minor_breaks = NULL, 
+                     labels = year_breaks$Year) + 
+  labs(title = "Daily Average Shares Traded vs. Time", 
+       x = "Time") + 
+  theme_light()
+```
+In terms of long-term trading volumes, there has been a significant increase in equity trading volumes since the 1990s, peaking around 2009 and beginning to decline in 2010.
+
+```{r}
+ggplot(Weekly, aes(x = Year, fill = Direction)) + 
+  geom_bar(position = "fill") +
+  geom_hline(yintercept = 0.5, col = "red") +
+  scale_x_continuous(breaks = seq(1990, 2010), minor_breaks = NULL) +
+  scale_y_continuous(labels = scales::percent_format()) +
+  theme_light() + 
+  theme(axis.title.y = element_blank(), 
+        legend.position = "bottom") + 
+  ggtitle("Up/Down Week % vs. Time")
+```
+Here is the direction over time. There appear to be only 4 years (2000, 2001, 2002 and 2008) where 50% of the weeks did not have a positive return.
+
+The table below shows the breakdown between down weeks and up weeks. All we need to do is predict positive weekly returns for the S&amp;P 500 to get a classifier with an accuracy of 55.56%.
+
+```{r}
+prop.table(table(Weekly$Direction))
+```
+
+```{r}
+ggplot(Weekly, aes(x = Week, y = Today / 100)) + 
+  geom_line() + 
+  scale_x_continuous(breaks = year_breaks$Week, minor_breaks = NULL, labels = year_breaks$Year) + 
+  scale_y_continuous(labels = scales::percent_format(), breaks = seq(-0.2, 0.2, 0.05)) + 
+  geom_hline(yintercept = 0, col = "red") +
+  theme_light() + 
+  labs(title = "Weekly % Return vs Time", 
+       x = "Time", 
+       y = "% Return")
+```
+We can also find that markets seem to go through periods of high instability. Market crashes (e.g. September 2008) are particularly prominent here.
+
+(b)
+```{r}
+Weekly$Direction <- factor(Weekly$Direction, levels = c("Down", "Up"))
+
+Weekly_fits<-
+  glm(Direction~Lag1+Lag2+Lag3+Lag4+Lag5+Volume, 
+      data=Weekly, 
+      family=binomial)
+summary(Weekly_fits)
+```
+Based on the summary results, Lag2 appears to be the only statistically significant variable.
+
+(c)
+```{r}
+weekly_probs <- predict(Weekly_fits, type = "response")
+weekly_pred <- rep("Down", 1089)
+weekly_pred[weekly_probs >.5]= "Up"
+table(weekly_pred, Weekly$Direction)
+```
+```{r}
+(557+54)/1089
+
+557/(557+48)
+
+(54)/(54+430)
+```
+Based on the results of the confusion matrix, we correctly predicted the weekly trend 56.11% of the time. However, we correctly predicted the upward trend 92.07% of the time and the downward trend only 11.16% of the time.
+
+(d)
+```{r}
+train = (Weekly$Year < 2009)
+
+Weekly_2009 <-Weekly[!train,]
+
+Weekly_fits<-glm(Direction~Lag2, 
+                 data=Weekly,
+                 family=binomial, 
+                 subset=train)
+
+Weekly_prob= predict(Weekly_fits, 
+                     Weekly_2009, 
+                     type = "response")
+
+Weekly_pred <- rep("Down", length(Weekly_prob))
+
+Weekly_pred[Weekly_prob > 0.5] = "Up"
+
+Direction_2009 = Weekly$Direction[!train]
+
+table(Weekly_pred, Direction_2009)
+
+mean(Weekly_pred == Direction_2009)
+```
+```{r}
+56/(56+5)
+
+9/(9+34)
+```
+Fitting a logistic regression model to the training data with Lag2 as the only predictor: the model accurately predicted the outcome 62.5% of the time. The model also correctly predicted the upward trend 91.80% of the time and the downward trend 20.93% of the time, which is a slight improvement over the previous model.
+
+(e)
+```{r}
+library(MASS)
+
+Weeklylda_fit<-lda(Direction~Lag2, 
+                   data=Weekly, 
+                   family=binomial, 
+                   subset=train)
+
+Weeklylda_pred<-predict(Weeklylda_fit, Weekly_2009)
+
+table(Weeklylda_pred$class, Direction_2009)
+
+mean(Weeklylda_pred$class == Direction_2009)
+```
+The results of the LDA modelling were identical to the logistic regression model developed in part (d), with an accuracy of 62.5%.
+
+(f)
+```{r}
+Weeklyqda_fit <- qda(Direction ~ Lag2, data = Weekly, subset = train)
+
+Weeklyqda_pred <- predict(Weeklyqda_fit, Weekly_2009)$class
+
+table(Weeklyqda_pred, Direction_2009)
+
+mean(Weeklyqda_pred == Direction_2009)
+```
+QDA Creation Model: The model has a 58.65% correct prediction rate. However, the model does not seem to predict the downward trend at all.
+
+(g)
+```{r}
+library(class)
+Week_train <- as.matrix(Weekly$Lag2[train])
+
+Week_test <- as.matrix(Weekly$Lag2[!train])
+
+train_Direction <- Weekly$Direction[train]
+
+set.seed(1)
+
+Weekknn_pred=knn(Week_train,Week_test,train_Direction,k=1)
+
+table(Weekknn_pred,Direction_2009)
+
+mean(Weekknn_pred == Direction_2009)
+```
+Creating a KNN (K=1) model, we can see that the model reduces the accuracy to 50%.
+
+(h)
+```{r}
+library(e1071)
+
+weeklynb_fit <- naiveBayes(Direction~Lag2 ,data=Weekly ,subset=train)
+
+weeklynb_fit
+```
+```{r}
+weeklynb_class <- predict(weeklynb_fit ,Weekly_2009)
+
+table(weeklynb_class ,Direction_2009)
+```
+```{r}
+mean (weeklynb_class == Direction_2009)
+```
+Having fitted a naive Bayesian model to the Weekly Dataset, we can see that it produces exactly the same results as the QDA model we fitted in part (f). The accuracy of both models is 58.65%, which is still lower than the 62.5% of the logistic regression model.
+
+(i)
+The logistic regression model seems to provide the best results, being able to correctly predict the outcome in 62.5% of cases.
+
+## Bonus question: ISL Exercise 4.8.13 Part (j) (30pts)
+```{r}
+set.seed(1)
+
+Weekknn_pred2 <- knn(Week_train,Week_test,train_Direction,k=20)
+
+table(Weekknn_pred2,Direction_2009)
+```
+```{r}
+mean(Weekknn_pred2 == Direction_2009)
+```
+Creating a KNN (K=20) model, we were able to increase the accuracy from 50% to 58.65% for the K=1 model created in part (g).
+
+```{r}
+Weeklyqda_fit2 <- qda(Direction ~ Lag2^2, data = Weekly, subset = train)
+
+Weeklyqda_pred2 <- predict(Weeklyqda_fit2, Weekly_2009)$class
+
+table(Weeklyqda_pred2, Direction_2009)
+```
+```{r}
+mean(Weeklyqda_pred2 == Direction_2009)
+```
+The accuracy of using Lag2^2 in the QDA model is 58.65%, which is the same as the accuracy of the QDA model created in part (f).
+
+```{r}
+Weeklylda_fit2<-lda(Direction~Lag2:Lag3, 
+                    data=Weekly,
+                    family=binomial, 
+                    subset=train)
+
+Weeklylda_pred2<-predict(Weeklylda_fit2, Weekly_2009)
+
+table(Weeklylda_pred2$class, Direction_2009)
+```
+```{r}
+mean(Weeklylda_pred2$class == Direction_2009)
+```
+The accuracy of the LDA model with Lag2:Lag3 as predictors is 58.65%, which is lower than the previous LDA model created in part (e).
+
+## Bonus question: ISL Exercise 4.8.4 (30pts)
+
