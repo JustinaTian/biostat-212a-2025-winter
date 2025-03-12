@@ -4,7 +4,7 @@ subtitle: "Due Feb 18, 2025 @ 11:59PM"
 author: "Jiaye Tian and UID: 306541095"
 date: today
 format:
-  html:
+  pdf:
     theme: cosmo
     embed-resources: true
     number-sections: true
@@ -214,7 +214,7 @@ C_p = \frac{1}{n} (RSS + 2d\hat{\sigma}^2),
 $$
 - \( RSS \) is the **residual sum of squares**,  
 - \( d \) is the **number of parameters**,  
-- \( \hat{\sigma}^2 \) is an estimate of the error variance.
+- hat{\sigma}^2 is an estimate of the error variance.
 
 The AIC is:
 
@@ -331,9 +331,132 @@ $$
 \text{Irreducible Error} = \mathbb{E}[(y - f(X))^2]
 $$
 
-## ISL Exercise 6.6.4 (10pts)
+## ISL Exercise 6.6.4 (10pts)  
+**(a)**  
 
-## ISL Exercise 6.6.5 (10pts)
+> **Part iii - Steadily Increase.**  
+
+When $\lambda = 0$, ridge regression estimates $\hat{\beta}$ as the least squares solution, since the penalty term is absent. This provides the lowest possible training RSS.
+As $\lambda$ increases, the penalty term introduces shrinkage, which decreases the values of $\beta_j$ coefficients. This constraint limits model flexibility, preventing it from fitting the training data as closely. Consequently, the training RSS steadily increases as $\lambda$ grows.
+
+**(b)**
+
+> **Part ii - Decrease initially, then eventually increase in a U shape.**
+
+As $\lambda$ (shrinkage) increases, variance is reduced, which initially outweighs the cost of shrinking $\hat{\beta}$ coefficients towards zero. As a result, the test RSS decreases. 
+When $\\\\lambda$ continues to grow, though, over-shrinkage produces underfitting, reducing predictive performance. At this point, the increased bias outweighs the reduced variance, causing test RSS to rise again, forming a characteristic U-shaped pattern.
+
+**(c)**  
+
+> **Part iv - Steadily Decrease.**  
+
+As $\lambda$ increases, model flexibility decreases since the $\beta$ coefficients become smaller in magnitude and shrink toward zero, decreasing variance. This process is repeated as shrinkage intensifies, lowering variance even more.
+If $\lambda$ becomes arbitrarily large, $\hat{\beta}$ will be close to zero, bringing variance close to zero, and the model converges to the null model, making all predictions nearly identical.
+
+**(d)**  
+
+> **Part iii - Steadily Increase. Squared bias increases steadily as $\lambda$ gets larger.**  
+
+As $\lambda$ increases, model flexibility decreases, so the $\beta$ coefficients reduce towards zero. This reduction in flexibility increases bias, as the model can no longer capture as much variance in the data. 
+
+**(e)**  
+
+> **Part v - Remain Constant.**  
+
+Irreducible error arises from inherent uncertainty or noise in the system. It is independent of model complexity and remains unchanged regardless of $\lambda$. 
+Since this error is fixed by variables outside the model, such as unmeasured variables or random fluctuations in $y$, it is constant.
+
+## ISL Exercise 6.6.5 (10pts)  
+**(a)**  
+Ridge regression aims to minimize the following objective function:  
+$$\sum_{i=1}^{n} \left( y_i - \beta_0 - \sum_{j=1}^{p} \beta_j x_{ij} \right)^2 + \lambda \sum_{j=1}^{p} \beta_j^2
+$$
+
+Given that $n = 2$, $p = 2$, and the predictors $x_1$ and $x_2$ are perfectly correlated, the data matrix is:  
+$$
+X = \begin{bmatrix} x_{11} & x_{12} \\ x_{21} & x_{22} \end{bmatrix}
+$$
+
+Since ridge regression estimates coefficients by minimizing the function above, substituting values from this setting gives:  
+$$
+\sum_{i=1}^{2} \left( y_i - \beta_0 - \beta_1 x_{i1} - \beta_2 x_{i2} \right)^2 + \lambda (\beta_1^2 + \beta_2^2)
+$$
+
+Given that $\beta_0 = 0$, the optimization problem simplifies to:  
+$$
+(y_1 - \beta_1 x_{11} - \beta_2 x_{12})^2 + (y_2 - \beta_1 x_{21} - \beta_2 x_{22})^2 + \lambda (\beta_1^2 + \beta_2^2)
+$$
+This definition encompasses the trade-off between residual sum of squares minimization and coefficient shrinkage and also adding a penalty on big coefficients, thus being more numerically stable and less affected by multicollinearity. Because ridge regression adds a penalty on $\beta_j^2$, it encourages small and clustered values of the coefficients, particularly when predictors are highly correlated.
+
+**(b)**  
+```{r, echo=FALSE, results="asis"}
+library(knitr)
+include_graphics("IMG_274FE6CD7017-1.jpeg")
+```
+**(c)**  
+The Lasso regression optimization problem is:  
+$$
+\sum_{i=1}^{n} \left( y_i - \beta_0 - \sum_{j=1}^{p} \beta_j x_{ij} \right)^2 + \lambda \sum_{j=1}^{p} |\beta_j|
+$$
+Given $n = 2, p = 2$, the predictor matrix is:  
+$$
+X = \begin{bmatrix} x_{11} & x_{12} \\ x_{21} & x_{22} \end{bmatrix}
+$$
+Lasso regression estimates coefficients by minimizing:  
+$$
+\sum_{i=1}^{2} \left( y_i - \beta_0 - \beta_1 x_{i1} - \beta_2 x_{i2} \right)^2 + \lambda (|\beta_1| + |\beta_2|)
+$$
+With $\beta_0 = 0$, this simplifies to:  
+$$
+(y_1 - \beta_1 x_{11} - \beta_2 x_{12})^2 + (y_2 - \beta_1 x_{21} - \beta_2 x_{22})^2 + \lambda (|\beta_1| + |\beta_2|)
+$$
+Since predictors are perfectly correlated:  
+$$
+2(y_1 - \hat{\beta}_1 x_{11} - \hat{\beta}_2 x_{11})^2 + \lambda (|\beta_1| + |\beta_2|)
+$$
+**(d)**  
+Lasso solutions are not unique because the constraint \( |\hat{\beta}_1| + |\hat{\beta}_2| \leq s \) forms a diamond-shaped region centered at \( (0,0) \). The optimization process seeks to minimize the squared error subject to this constraint.
+
+The objective function:
+$$
+\sum_{i=1}^{n} \left( y_i - \beta_0 - \sum_{j=1}^{p} \beta_j x_{ij} \right)^2 + \lambda \sum_{j=1}^{p} |\beta_j|
+$$
+
+Given the specific setting, the minimization reduces to:
+$$
+\min \left[ 2(y_1 - (\hat{\beta}_1 + \hat{\beta}_2) x_{11}) \right]
+$$
+Since the Lasso constraint enforces \( |\hat{\beta}_1| + |\hat{\beta}_2| = s \), this defines a **line segment** on the boundary of the diamond. The final solution is **not unique**, as any point on this edge satisfies the optimization.
+
+We can illustrate this by plotting the feasible region and the solution path.
+
+```{r, echo=FALSE, message=FALSE}
+
+library(ggplot2)
+
+# Define the constraint region
+s <- 1
+lasso_region <- data.frame(
+  x = c(s, 0, -s, 0, s),
+  y = c(0, s, 0, -s, 0)
+)
+
+# Define possible solutions along one constraint edge
+solution_line <- data.frame(
+  x = seq(-s, s, length.out = 100),
+  y = s - seq(-s, s, length.out = 100)
+)
+
+# Plot
+ggplot() +
+  geom_polygon(data = lasso_region, aes(x, y), fill = "lightblue", alpha = 0.4, color = "blue") +
+  geom_line(data = solution_line, aes(x, y), color = "red", linewidth = 1.2) +  # Updated from `size` to `linewidth`
+  geom_point(aes(x = 0.5, y = 0.5), color = "black", size = 3) + 
+  labs(title = "Lasso Constraint and Non-Unique Solutions",
+       x = expression(beta[1]),
+       y = expression(beta[2])) +
+  theme_minimal()
+```
 
 ## ISL Exercise 6.6.11 (30pts)
 
@@ -346,9 +469,118 @@ You must follow the [typical machine learning paradigm](https://ucla-biostat-212
 | Lasso | | | |
 | ... | | | |
 
+```{r}
+library(MASS) 
+library(leaps)   
+library(glmnet) 
+library(pls)    
+
+data(Boston)
+set.seed(1)
+
+train_index = sample(1:nrow(Boston), nrow(Boston) * 0.8)
+train_data = Boston[train_index, ]
+test_data = Boston[-train_index, ]
+
+x_train = model.matrix(crim ~ ., train_data)[, -1]
+y_train = train_data$crim
+
+x_test = model.matrix(crim ~ ., test_data)[, -1]
+y_test = test_data$crim
+```
+```{r}
+# --------------------------
+# Step 1: CV RMSE
+# --------------------------
+predict.regsubsets = function(object, newdata, id, ...) {
+    form = as.formula(object$call[[2]])
+    mat = model.matrix(form, newdata)
+    coefi = coef(object, id = id)
+    xvars = names(coefi)
+    mat[, xvars] %*% coefi
+}
+
+k = 10
+folds = sample(1:k, nrow(Boston), replace = TRUE)
+cv.errors = matrix(NA, k, 13, dimnames = list(NULL, paste(1:13)))
+for (j in 1:k) {
+    best.fit = regsubsets(crim ~ ., data = Boston[folds != j, ], nvmax = 13)
+    for (i in 1:13) {
+        pred = predict(best.fit, Boston[folds == j, ], id = i)
+        cv.errors[j, i] = mean((Boston$crim[folds == j] - pred)^2)
+    }
+}
+mean.cv.errors = apply(cv.errors, 2, mean)
+plot(mean.cv.errors, type = "b", xlab = "Number of variables", ylab = "CV error")
+```
+```{r}
+# min CV RMSE
+min(mean.cv.errors)
+```
+```{r}
+regfit.best = regsubsets(crim~., data=Boston, nvmax=13)
+coef(regfit.best, 12)
+```
+```{r}
+# --------------------------
+# Step 2: Lasso
+# --------------------------
+lasso_model = cv.glmnet(x_train, y_train, alpha = 1, type.measure = "mse")
+
+# CV RMSE
+lasso_cv_rmse = sqrt(min(lasso_model$cvm))
+
+# Test RMSE
+lasso_pred = predict(lasso_model, s = lasso_model$lambda.min, newx = x_test)
+lasso_test_rmse = sqrt(mean((y_test - lasso_pred)^2))
+
+plot(lasso_model)
+```
+```{r}
+# --------------------------
+# Step 3: Ridge
+# --------------------------
+ridge_model = cv.glmnet(x_train, y_train, alpha = 0, type.measure = "mse")
+
+# CV RMSE
+ridge_cv_rmse = sqrt(min(ridge_model$cvm))
+
+# Test RMSE
+ridge_pred = predict(ridge_model, s = ridge_model$lambda.min, newx = x_test)
+ridge_test_rmse = sqrt(mean((y_test - ridge_pred)^2))
+```
+```{r}
+# --------------------------
+# Step 4: Least Squares (LS)
+# --------------------------
+ls_model = lm(crim ~ ., data = train_data)
+
+# CV RMSE
+ls_cv_rmse = sqrt(mean(ls_model$residuals^2))
+
+# Test RMSE
+ls_pred = predict(ls_model, newdata = test_data)
+ls_test_rmse = sqrt(mean((y_test - ls_pred)^2))
+```
+```{r}
+# --------------------------
+# Step 5: results
+# --------------------------
+results <- data.frame(
+  Method = c("Least Squares", "Ridge", "Lasso"),
+  CV_RMSE = c(ls_cv_rmse, ridge_cv_rmse, lasso_cv_rmse),
+  Test_RMSE = c(ls_test_rmse, ridge_test_rmse, lasso_test_rmse)
+)
+
+print(results)
+```
 ## Bonus question (20pts)
 
 Consider a linear regression, fit by least squares to a set of training data $(x_1, y_1), \ldots, (x_N,  y_N)$ drawn at random from a population. Let $\hat \beta$ be the least squares estimate. Suppose we have some test data $(\tilde{x}_1, \tilde{y}_1), \ldots, (\tilde{x}_M, \tilde{y}_M)$ drawn at random from the same population as the training data. If $R_{\text{train}}(\beta) = \frac{1}{N} \sum_{i=1}^N (y_i - \beta^T x_i)^2$ and $R_{\text{test}}(\beta) = \frac{1}{M} \sum_{i=1}^M (\tilde{y}_i - \beta^T \tilde{x}_i)^2$. Show that
 $$
 \operatorname{E}[R_{\text{train}}(\hat{\beta})] < \operatorname{E}[R_{\text{test}}(\hat{\beta})].
 $$
+```{r, echo=FALSE, results="asis"}
+library(knitr)
+include_graphics("IMG_3CF00996EB9E-1.jpeg")
+```
