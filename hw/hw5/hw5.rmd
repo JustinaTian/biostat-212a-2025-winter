@@ -4,7 +4,7 @@ subtitle: "Due Mar 16, 2024 @ 11:59PM"
 author: "Jiaye Tian UID: 306541095"
 date: today
 format:
-  html:
+  pdf:
     theme: cosmo
     embed-resources: true
     number-sections: true
@@ -23,8 +23,9 @@ knitr:
 ---
 
 ## ISL Exercise 9.7.1 (10pts)
-(a)
-(b)
+This problem involves hyperplanes in two dimensions.
+(a) Sketch the hyperplane 1 + 3X1 − X2 = 0. Indicate the set of points for which 1+3X1 −X2 > 0, as well as the set of points for which 1 + 3X1 − X2 < 0.
+(b) On the same plot, sketch the hyperplane −2 + X1 + 2X2 = 0. Indicate the set of points for which −2 + X1 + 2X2 > 0, as well as the set of points for which −2 + X1 + 2X2 < 0.
 ```{r}
 x1 <- -10:10
 x2 <- 1 + 3 * x1
@@ -37,25 +38,30 @@ text(c(0), c(15), "Greater than 0", col = "red")
 ```
 
 ## ISL Exercise 9.7.2 (10pts)
-(a)
+2. We have seen that in p = 2 dimensions, a linear decision boundary takes the form β0 + β1X1 + β2X2 = 0. We now investigate a non-linear decision boundary.
+(a) Sketch the curve (1+X1)^2 +(2−X2)^2 =4.
 ```{r}
 plot(NA, NA, type = "n", xlim = c(-4, 2), ylim = c(-1, 5), asp = 1, xlab = "X1", ylab = "X2")
 symbols(c(-1), c(2), circles = c(2), add = TRUE, inches = FALSE)
 ```
-(b)
+(b) On your sketch, indicate the set of points for which (1+X1)^2 +(2−X2)^2 >4, as well as the set of points for which (1+X1)^2 +(2−X2)^2 ≤4.
 ```{r}
 plot(NA, NA, type = "n", xlim = c(-4, 2), ylim = c(-1, 5), asp = 1, xlab = "X1", ylab = "X2")
 symbols(c(-1), c(2), circles = c(2), add = TRUE, inches = FALSE)
 text(c(-1), c(2), "< 4")
 text(c(-4), c(2), "> 4")
 ```
-(c)
+(c) Suppose that a classifier assigns an observation to the blue class if and to the red class otherwise. To what class is the observation (1+X1)^2 +(2−X2)^2 >4, (0, 0) classified? (−1, 1)? (2, 2)? (3, 8)?
 ```{r}
 plot(c(0, -1, 2, 3), c(0, 1, 2, 8), col = c("blue", "red", "blue", "blue"), 
     type = "p", asp = 1, xlab = "X1", ylab = "X2")
 symbols(c(-1), c(2), circles = c(2), add = TRUE, inches = FALSE)
 ```
-(d)
+(d) Argue that while the decision boundary in (c) is not linear in terms of X1 and X2, it is linear in terms of X1, X12, X2, and X2 .
+```{r, echo=FALSE, results="asis"}
+library(knitr)
+include_graphics("9.7.2.jpeg")
+```
 
 ## Support vector machines (SVMs) on the `Carseats` data set (30pts)
 
@@ -65,8 +71,10 @@ Follow the machine learning workflow to train support vector classifier (same as
 # Load necessary libraries
 library(e1071)  # For SVM
 library(caret)  # For evaluation metrics
-library(ISLR2)  # For Carseats dataset
+library(ISLR2)
 library(pROC)
+library(ggplot2)
+library(lattice)
 
 # Set seed for reproducibility
 set.seed(2)
@@ -91,9 +99,13 @@ svc_model <- svm(High ~ ., data = Carseats.train, kernel = "linear", cost = 1, s
 svc_pred <- predict(svc_model, Carseats.test)
 confusion_matrix_svc <- confusionMatrix(svc_pred, High.test)
 
-# Display accuracy and AUC
+# Display accuracy
 print(confusion_matrix_svc$overall["Accuracy"])
-svc_pred_prob <- attributes(predict(svc_model, Carseats.test, decision.values = TRUE))$decision.values
+
+# Extract decision values and ensure it's a numeric vector
+svc_pred_prob <- attr(predict(svc_model, Carseats.test, decision.values = TRUE), "decision.values")[, 1]
+
+# Compute ROC and AUC
 svc_roc <- roc(High.test, svc_pred_prob)
 print(svc_roc$auc)
 ```
@@ -110,7 +122,7 @@ confusion_matrix_poly <- confusionMatrix(poly_pred, High.test)
 
 # Accuracy and AUC
 print(confusion_matrix_poly$overall["Accuracy"])
-poly_pred_prob <- attributes(predict(best_poly_model, Carseats.test, decision.values = TRUE))$decision.values
+poly_pred_prob <- attr(predict(best_poly_model, Carseats.test, decision.values = TRUE), "decision.values")[, 1]
 poly_roc <- roc(High.test, poly_pred_prob)
 print(poly_roc$auc)
 ```
@@ -127,7 +139,7 @@ confusion_matrix_radial <- confusionMatrix(radial_pred, High.test)
 
 # Accuracy and AUC
 print(confusion_matrix_radial$overall["Accuracy"])
-radial_pred_prob <- attributes(predict(best_radial_model, Carseats.test, decision.values = TRUE))$decision.values
+radial_pred_prob <- attr(predict(best_radial_model, Carseats.test, decision.values = TRUE), "decision.values")[, 1]
 radial_roc <- roc(High.test, radial_pred_prob)
 print(radial_roc$auc)
 ```
